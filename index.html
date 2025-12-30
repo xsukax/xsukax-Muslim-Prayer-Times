@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>xsukax Muslim Prayer Times</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background: #f6f8fa; color: #24292f; min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .card { background: white; border: 1px solid #d0d7de; border-radius: 6px; padding: 24px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+        .header { border-bottom: 1px solid #d0d7de; padding-bottom: 16px; margin-bottom: 24px; }
+        .brand-title { font-size: 32px; font-weight: 700; color: #24292f; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
+        .table-container { overflow-x: auto; margin-top: 20px; border: 1px solid #d0d7de; border-radius: 6px; }
+        .prayer-table { width: 100%; border-collapse: collapse; background: white; }
+        .prayer-table thead { background: #f6f8fa; border-bottom: 2px solid #d0d7de; }
+        .prayer-table th { padding: 16px 20px; text-align: left; font-weight: 600; color: #24292f; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .prayer-table td { padding: 20px; border-bottom: 1px solid #d0d7de; font-size: 15px; }
+        .prayer-table tbody tr { transition: background 0.2s ease; }
+        .prayer-table tbody tr:hover { background: #f6f8fa; }
+        .prayer-table tbody tr:last-child td { border-bottom: none; }
+        .prayer-icon { font-size: 24px; display: inline-block; width: 40px; text-align: center; }
+        .prayer-name-cell { font-weight: 600; color: #24292f; }
+        .prayer-arabic { color: #57606a; font-size: 14px; margin-top: 4px; }
+        .prayer-time-cell { font-family: 'Courier New', monospace; font-size: 24px; font-weight: 700; color: #0969da; }
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: #2da44e; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 14px; transition: all 0.2s; }
+        .btn:hover { background: #2c974b; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(45,164,78,0.2); }
+        .btn:disabled { background: #94d3a2; cursor: not-allowed; transform: none; box-shadow: none; }
+        .loading { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top: 2px solid white; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .notification { position: fixed; top: 20px; right: 20px; background: white; border: 1px solid #d0d7de; border-radius: 6px; padding: 16px 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); max-width: 380px; z-index: 9999; animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes slideIn { from { transform: translateX(450px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .notification.success { border-left: 4px solid #2da44e; }
+        .notification.error { border-left: 4px solid #cf222e; }
+        .notification-title { font-weight: 600; margin-bottom: 4px; color: #24292f; display: flex; align-items: center; gap: 8px; }
+        .notification-message { font-size: 13px; color: #57606a; line-height: 1.5; }
+        .info-badge { display: inline-flex; align-items: center; gap: 6px; background: #ddf4ff; color: #0969da; padding: 6px 14px; border-radius: 16px; font-size: 13px; font-weight: 500; margin: 4px 4px 4px 0; border: 1px solid #b6e3ff; }
+        .location-info { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+        .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: loading 1.5s ease-in-out infinite; border-radius: 4px; height: 24px; }
+        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .status-indicator { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #2da44e; margin-right: 8px; animation: pulse 2s ease-in-out infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .footer { text-align: center; padding: 32px 20px; color: #57606a; font-size: 14px; }
+        .footer-link { color: #0969da; text-decoration: none; font-weight: 500; transition: color 0.2s; }
+        .footer-link:hover { color: #0550ae; text-decoration: underline; }
+        @media (max-width: 768px) { .container { padding: 12px; } .card { padding: 16px; } .brand-title { font-size: 24px; flex-direction: column; align-items: flex-start; gap: 8px; } .prayer-table th, .prayer-table td { padding: 12px; } .prayer-time-cell { font-size: 20px; } .prayer-icon { font-size: 20px; width: 32px; } .notification { max-width: 320px; right: 12px; top: 12px; } }
+        @media (max-width: 480px) { .prayer-table th:first-child, .prayer-table td:first-child { padding-left: 12px; } .prayer-table th:last-child, .prayer-table td:last-child { padding-right: 12px; } .prayer-arabic { font-size: 12px; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <div class="card">
+            <div class="header">
+                <div class="brand-title">
+                    <span>🕌</span>
+                    <span>xsukax Muslim Prayer Times</span>
+                </div>
+                <p style="color: #57606a; font-size: 15px; margin-top: 4px;">Accurate Islamic prayer times based on your geographical location</p>
+            </div>
+
+            <!-- Location & Date Information -->
+            <div id="locationInfo">
+                <div style="padding: 16px; background: #f6f8fa; border-radius: 6px; border: 1px solid #d0d7de;">
+                    <p style="font-size: 14px; color: #57606a;">Click the button below to get prayer times for your current location</p>
+                </div>
+            </div>
+
+            <!-- Action Button -->
+            <div style="margin-top: 24px;">
+                <button id="fetchBtn" class="btn" onclick="fetchPrayerTimesApp()">
+                    <span id="btnIcon">📍</span>
+                    <span id="btnText">Get Prayer Times for My Location</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Prayer Times Table -->
+        <div id="prayerTimesContainer" style="display: none;">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                    <h2 style="font-size: 22px; font-weight: 600; color: #24292f; display: flex; align-items: center; gap: 8px;">
+                        <span class="status-indicator"></span>
+                        Today's Prayer Schedule
+                    </h2>
+                    <div style="color: #57606a; font-size: 13px;" id="lastUpdated"></div>
+                </div>
+                
+                <div class="table-container">
+                    <table class="prayer-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;"></th>
+                                <th>Prayer Name</th>
+                                <th style="text-align: center; width: 180px;">Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="prayerTableBody">
+                            <!-- Prayer rows will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top: 20px; padding: 16px; background: #f6f8fa; border-radius: 6px; border: 1px solid #d0d7de;">
+                    <p style="font-size: 13px; color: #57606a; line-height: 1.6;">
+                        <strong style="color: #24292f;">📌 Note:</strong> Prayer times are calculated based on your device's GPS coordinates using the Islamic Society of North America (ISNA) calculation method. Times may vary slightly depending on your exact location and local conventions.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p style="margin-bottom: 8px;">
+                <strong>xsukax Muslim Prayer Times</strong> • Powered by <a href="https://aladhan.com/" target="_blank" rel="noopener noreferrer" class="footer-link">AlAdhan API</a>
+            </p>
+            <p style="font-size: 13px; margin-bottom: 12px;">
+                Made with precision and care for the Muslim community • Open Source & Privacy-Focused
+            </p>
+            <p style="font-size: 13px; color: #6e7781;">
+                Created by <a href="https://github.com/xsukax" target="_blank" rel="noopener noreferrer" class="footer-link">@xsukax</a> • © 2025
+            </p>
+            <p style="margin-top: 8px; font-size: 12px; color: #6e7781;">
+                All prayer calculations are automated and should be verified with local mosques
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Application state
+        const AppState = {
+            coordinates: null,
+            prayerData: null,
+            lastUpdate: null
+        };
+
+        /**
+         * Display notification toast at top-right corner
+         * @param {string} title - Notification title
+         * @param {string} message - Notification message  
+         * @param {string} type - Type: 'success' or 'error'
+         */
+        function showNotification(title, message, type = 'success') {
+            const icons = {
+                success: '✓',
+                error: '✕'
+            };
+
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <div class="notification-title">
+                    <span style="font-size: 16px;">${icons[type]}</span>
+                    <span>${title}</span>
+                </div>
+                <div class="notification-message">${message}</div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 4 seconds with fade-out animation
+            setTimeout(() => {
+                notification.style.animation = 'slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) reverse';
+                setTimeout(() => notification.remove(), 300);
+            }, 4000);
+        }
+
+        /**
+         * Retrieve user's current location using Geolocation API
+         * @returns {Promise<{latitude: number, longitude: number}>}
+         */
+        async function getCurrentLocation() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject(new Error('Geolocation is not supported by your browser. Please use a modern browser.'));
+                    return;
+                }
+
+                const options = {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                };
+
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        resolve({
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy
+                        });
+                    },
+                    (error) => {
+                        let errorMsg = '';
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                errorMsg = 'Location access denied. Please allow location permissions in your browser settings and try again.';
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                errorMsg = 'Location information unavailable. Please check your device GPS settings.';
+                                break;
+                            case error.TIMEOUT:
+                                errorMsg = 'Location request timed out. Please try again or check your internet connection.';
+                                break;
+                            default:
+                                errorMsg = 'Unable to retrieve your location. Please try again.';
+                        }
+                        reject(new Error(errorMsg));
+                    },
+                    options
+                );
+            });
+        }
+
+        /**
+         * Fetch prayer times from AlAdhan API
+         * @param {number} lat - Latitude
+         * @param {number} lng - Longitude
+         * @returns {Promise<Object>} Prayer data
+         */
+        async function getPrayerTimesFromAPI(lat, lng) {
+            try {
+                // Using AlAdhan API v1 - Method 2 (ISNA)
+                const apiUrl = `https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}&method=2`;
+                
+                const response = await fetch(apiUrl);
+
+                if (!response.ok) {
+                    throw new Error(`API returned status ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                // Validate response structure
+                if (!data.data || !data.data.timings) {
+                    throw new Error('Invalid response format from prayer times API');
+                }
+
+                return data.data;
+            } catch (error) {
+                console.error('API Error:', error);
+                throw new Error(`Failed to fetch prayer times: ${error.message}`);
+            }
+        }
+
+        /**
+         * Update location information display
+         * @param {Object} data - Prayer API data
+         */
+        function updateLocationDisplay(data) {
+            const locationDiv = document.getElementById('locationInfo');
+            const gregorianDate = data.date.readable;
+            const hijriDate = `${data.date.hijri.day} ${data.date.hijri.month.en} ${data.date.hijri.year} AH`;
+            const timezone = data.meta.timezone || 'Unknown';
+            const method = data.meta.method.name;
+            
+            locationDiv.innerHTML = `
+                <div style="margin-bottom: 14px;">
+                    <div style="font-size: 20px; font-weight: 600; color: #24292f;">📅 ${gregorianDate}</div>
+                </div>
+                <div class="location-info">
+                    <span class="info-badge">
+                        <span>📍</span>
+                        <span>${timezone}</span>
+                    </span>
+                    <span class="info-badge">
+                        <span>🌙</span>
+                        <span>${hijriDate}</span>
+                    </span>
+                    <span class="info-badge">
+                        <span>📐</span>
+                        <span>${method}</span>
+                    </span>
+                </div>
+            `;
+        }
+
+        /**
+         * Populate prayer times table
+         * @param {Object} timings - Prayer timings object from API
+         */
+        function populatePrayerTable(timings) {
+            const tableBody = document.getElementById('prayerTableBody');
+            const prayerContainer = document.getElementById('prayerTimesContainer');
+            
+            // Prayer definitions with icons and Arabic names
+            const prayers = [
+                { name: 'Fajr', arabic: 'الفجر (Dawn)', key: 'Fajr', icon: '🌅' },
+                { name: 'Sunrise', arabic: 'الشروق', key: 'Sunrise', icon: '☀️' },
+                { name: 'Dhuhr', arabic: 'الظهر (Noon)', key: 'Dhuhr', icon: '🌤️' },
+                { name: 'Asr', arabic: 'العصر (Afternoon)', key: 'Asr', icon: '🌆' },
+                { name: 'Maghrib', arabic: 'المغرب (Sunset)', key: 'Maghrib', icon: '🌇' },
+                { name: 'Isha', arabic: 'العشاء (Night)', key: 'Isha', icon: '🌙' }
+            ];
+
+            // Clear existing rows
+            tableBody.innerHTML = '';
+
+            // Create table rows for each prayer
+            prayers.forEach((prayer) => {
+                const time = timings[prayer.key];
+                if (time) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td style="text-align: center;">
+                            <span class="prayer-icon">${prayer.icon}</span>
+                        </td>
+                        <td class="prayer-name-cell">
+                            <div>${prayer.name}</div>
+                            <div class="prayer-arabic">${prayer.arabic}</div>
+                        </td>
+                        <td class="prayer-time-cell" style="text-align: center;">
+                            ${time}
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                }
+            });
+
+            // Update last updated timestamp
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: true 
+            });
+            document.getElementById('lastUpdated').textContent = `Last updated: ${timeStr}`;
+
+            // Show prayer times container
+            prayerContainer.style.display = 'block';
+
+            // Smooth scroll to table
+            setTimeout(() => {
+                prayerContainer.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'nearest' 
+                });
+            }, 100);
+        }
+
+        /**
+         * Update button state during operations
+         * @param {boolean} isLoading - Loading state
+         */
+        function setButtonLoadingState(isLoading) {
+            const btn = document.getElementById('fetchBtn');
+            const btnIcon = document.getElementById('btnIcon');
+            const btnText = document.getElementById('btnText');
+            
+            if (isLoading) {
+                btn.disabled = true;
+                btnIcon.innerHTML = '<span class="loading"></span>';
+                btnText.textContent = 'Loading Prayer Times...';
+            } else {
+                btn.disabled = false;
+                btnIcon.textContent = '🔄';
+                btnText.textContent = 'Refresh Prayer Times';
+            }
+        }
+
+        /**
+         * Main application entry point
+         */
+        async function fetchPrayerTimesApp() {
+            try {
+                // Set loading state
+                setButtonLoadingState(true);
+
+                // Step 1: Get user location
+                const coords = await getCurrentLocation();
+                AppState.coordinates = coords;
+
+                // Step 2: Fetch prayer times from API
+                const prayerData = await getPrayerTimesFromAPI(coords.latitude, coords.longitude);
+                AppState.prayerData = prayerData;
+                AppState.lastUpdate = new Date();
+
+                // Step 3: Update UI with prayer data
+                updateLocationDisplay(prayerData);
+                populatePrayerTable(prayerData.timings);
+
+                // Success notification
+                showNotification(
+                    'Success!', 
+                    'Prayer times loaded successfully for your location.',
+                    'success'
+                );
+
+                // Reset button state
+                setButtonLoadingState(false);
+
+            } catch (error) {
+                // Error handling
+                console.error('Application Error:', error);
+                showNotification('Error', error.message, 'error');
+                setButtonLoadingState(false);
+
+                // Display error in location info area
+                const locationDiv = document.getElementById('locationInfo');
+                locationDiv.innerHTML = `
+                    <div style="padding: 16px; background: #ffebe9; border: 1px solid #ff818266; border-radius: 6px; color: #cf222e;">
+                        <div style="font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 20px;">⚠️</span>
+                            <span>Unable to Load Prayer Times</span>
+                        </div>
+                        <div style="font-size: 14px; line-height: 1.5;">${error.message}</div>
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize app on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('xsukax Muslim Prayer Times App - Ready');
+        });
+
+        // Add keyboard shortcut (Ctrl/Cmd + Enter) to fetch prayer times
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                const btn = document.getElementById('fetchBtn');
+                if (!btn.disabled) {
+                    fetchPrayerTimesApp();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
